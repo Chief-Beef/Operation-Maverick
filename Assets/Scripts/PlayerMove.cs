@@ -14,8 +14,8 @@ public class PlayerMove : MonoBehaviour
     public float minSpeed = 0f;
 
     [Header("Rotation Settings")]
-    public float yawSpeed = 50f;    //
-    public float pitchSpeed = 80f;  // 
+    public float yawSpeed = 50f;    // left right
+    public float pitchSpeed = 80f;  // up down
     public float rollSpeed = 100f;  // barrel roll
 
     [Header("Mouse Settings")]
