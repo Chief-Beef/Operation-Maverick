@@ -32,6 +32,7 @@ public class PlayerMove : MonoBehaviour
 
     void Start()
     {
+        //Plane RB -- uses physics, no gravity
         rb = GetComponent<Rigidbody>();
         rb.useGravity = false;
         rb.drag = 0.2f;
@@ -47,14 +48,10 @@ public class PlayerMove : MonoBehaviour
         Cursor.visible = false;
     }
 
-    void Update()
+    void FixedUpdate()
     {
         HandleInput();
         StabilizeCamera();
-    }
-
-    void FixedUpdate()
-    {
         rb.velocity = transform.forward * currentSpeed;
     }
 
@@ -76,7 +73,7 @@ public class PlayerMove : MonoBehaviour
         if (Input.GetKey(KeyCode.Space)) pitchInput = -1f;
         else if (Input.GetKey(KeyCode.LeftShift)) pitchInput = 1f;
 
-        float mouseX = Input.GetAxis("Mouse X");
+        float mouseX = Input.GetAxis("Mouse X");    //rotate input -- mouse left and right
 
         bool hasInput = Mathf.Abs(mouseX) > 0.05f || Mathf.Abs(yawInput) > 0.05f || Mathf.Abs(pitchInput) > 0.05f;
 
