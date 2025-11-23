@@ -51,8 +51,14 @@ public class PlayerMove : MonoBehaviour
     void FixedUpdate()
     {
         HandleInput();
-        StabilizeCamera();
         rb.velocity = transform.forward * currentSpeed;
+
+        Vector3 targetEuler = rb.rotation.eulerAngles;
+        targetEuler.z = 0f;
+
+        Quaternion targetRot = Quaternion.Euler(targetEuler);
+        playerCamera.transform.rotation = Quaternion.Slerp(playerCamera.transform.rotation, targetRot, Time.deltaTime * cameraRollSmooth);
+ 
     }
 
     void HandleInput()
@@ -75,83 +81,20 @@ public class PlayerMove : MonoBehaviour
 
         float mouseX = Input.GetAxis("Mouse X");    //rotate input -- mouse left and right
 
-        bool hasInput = Mathf.Abs(mouseX) > 0.05f || Mathf.Abs(yawInput) > 0.05f || Mathf.Abs(pitchInput) > 0.05f;
-
-        if (hasInput)
-        {
+        
             // --- Apply player input rotation ---
-            float yawRot = yawInput * yawSpeed * Time.deltaTime;
-            float pitchRot = pitchInput * pitchSpeed * Time.deltaTime;
-            float rollRot = -mouseX * rollSpeed * mouseSensitivity * Time.deltaTime;
+        float yawRot = yawInput * yawSpeed * Time.deltaTime;
+        float pitchRot = pitchInput * pitchSpeed * Time.deltaTime;
+        float rollRot = -mouseX * rollSpeed * mouseSensitivity * Time.deltaTime;
 
-            Quaternion rotationChange = Quaternion.Euler(pitchRot, yawRot, rollRot);
-            rb.MoveRotation(rb.rotation * rotationChange);
+        Quaternion rotationChange = Quaternion.Euler(pitchRot, yawRot, rollRot);
+        rb.MoveRotation(rb.rotation * rotationChange);
 
-            // --- Store the last stable heading ---
-            lastStableHeading = rb.rotation;
-        }
-        else
-        {
-            // --- No input: keep flying toward last heading and level roll ---
-            MaintainHeadingAndLevel();
-        }
+        // --- Store the last stable heading ---
+        lastStableHeading = rb.rotation;
     }
 
     // Store last heading rotation
     private Quaternion lastStableHeading;
-
-    void MaintainHeadingAndLevel()
-    {
-        // Smoothly rotate toward last known heading but level roll
-        Vector3 forwardDir = lastStableHeading * Vector3.forward;
-
-        // Build a leveled rotation (same heading but upright)
-        Quaternion targetRotation = Quaternion.LookRotation(forwardDir, Vector3.up);
-
-        // Smoothly slerp from current to target
-        rb.MoveRotation(Quaternion.Slerp(rb.rotation, targetRotation, Time.deltaTime * autoLevelSpeed));
-    }
-
-    void StabilizeCamera()
-    {
-        if (playerCamera == null) return;
-
-        // --- Detect roll input ---
-        float mouseX = Input.GetAxis("Mouse X");
-        bool hasRollInput = Mathf.Abs(mouseX) > 0.05f;
-
-        // --- Auto-level rotation ---
-        Quaternion targetRotation = Quaternion.LookRotation(transform.forward, transform.up);
-
-        if (!hasRollInput)
-        {
-            // Smoothly level Z rotation (no horizon tilt)
-            Vector3 euler = targetRotation.eulerAngles;
-            euler.z = 0f;
-            targetRotation = Quaternion.Euler(euler);
-        }
-
-        playerCamera.transform.rotation = Quaternion.Slerp(playerCamera.transform.rotation, targetRotation,Time.deltaTime * cameraRollSmooth);
-
-        // --- Dynamic FOV and camera distance based on speed ---
-        float t = Mathf.InverseLerp(minSpeed, maxSpeed, currentSpeed);
-
-        float targetFOV = Mathf.Lerp(75f, 100f, t); // 75° at min speed, 100° at max speed
-        playerCamera.fieldOfView = Mathf.Lerp(playerCamera.fieldOfView, targetFOV, Time.deltaTime * 2f);
-
-        float minCamDistanceZ = -9f; // local Z offset at low speed
-        float maxCamDistanceZ = -12f; // local Z offset at high speed
-        float targetZ = Mathf.Lerp(minCamDistanceZ, maxCamDistanceZ, t);
-
-        float minCamDistanceY = 4f; // local Z offset at low speed
-        float maxCamDistanceY = 5.5f; // local Z offset at high speed
-        float targetY = Mathf.Lerp(minCamDistanceY, maxCamDistanceY, t);
-
-        // --- Smooth local camera position (only Z axis, keep Y fixed) ---
-        Vector3 localPos = playerCamera.transform.localPosition;
-        float smoothedZ = Mathf.Lerp(localPos.z, targetZ, Time.deltaTime * 2f);
-        float smoothedY = Mathf.Lerp(localPos.y, targetY, Time.deltaTime * 2f);
-        playerCamera.transform.localPosition = new Vector3(localPos.x, smoothedY, smoothedZ);
-    }
 
 }
